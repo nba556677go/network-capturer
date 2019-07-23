@@ -1,7 +1,11 @@
 import pyshark
 from util import *
 import sys
-#import subprocess
+
+if len(sys.argv) != 3:
+  print("Usage: python3 from_pcap.py <input file> <output file>")
+  exit()
+
 pcapfile = sys.argv[1]
 subnet = load_config("./subnet.config")
 '''
@@ -20,9 +24,10 @@ tcp_sessions = {}
 udp_sessions = {}
 first_udp = {}
 
-
+print("[*] Reading pcap file...")
 packets = pyshark.FileCapture( pcapfile , display_filter="ip && (tcp || udp)")
 
+print("[*] Parsing sessions...")
 i = 0
 for packet in packets:
   if 'TCP' in packet:
@@ -62,6 +67,8 @@ for packet in packets:
         print(udp_sessions, packet.udp.stream)
         exit()
   i += 1
+
+print("[*] Adding payload info...")
 #process payload
 for streamID in tcp_sessions.keys():
   payload = follow_stream("tcp",streamID, pcapfile)
@@ -71,6 +78,4 @@ for streamID in udp_sessions.keys():
   payload = follow_stream("udp",streamID, pcapfile) 
   udp_sessions[streamID]['payload'] = payload
 
-#writejson(tcp_sessions , udp_sessions)
-print(tcp_sessions)
-print(udp_sessions)
+writejson(tcp_sessions , udp_sessions, sys.argv[2])

@@ -1,5 +1,6 @@
 import subprocess
 import json
+import codecs
 
 def redPrint(*argv):
   print('\033[91m'+" ".join(str(ele) for ele in argv)+'\033[0m')
@@ -34,18 +35,29 @@ def in_subnet(host, subnet):
   return (host & mask) == (prefix & mask)
 
 def findnth(string, substring, n):
-    parts = string.split(substring, n + 1)
-    if len(parts) <= n + 1:
-        return -1
-    return len(string) - len(parts[-1]) - len(substring)
+  parts = string.split(substring, n + 1)
+  if len(parts) <= n + 1:
+    return -1
+  return len(string) - len(parts[-1]) - len(substring)
 
 def follow_stream(protocol , streamID , pcapfile):
-
   raw = subprocess.check_output(f"tshark -r {pcapfile} -Y usb -z follow,{protocol},ascii,{streamID} ",  shell=True)
   raw = raw[findnth(raw ,b'\n', 5 )+1 :raw.rfind(b'\n' , 0,len(raw) - 1)]
   return raw
 
-def writejson(tcp , udp):
-  with open('filtered.txt', 'w') as outfile:  
-      json.dump(tcp, outfile)
-      json.dump(udp, outfile)
+def hex_handler(err):
+    thebyte = err.object[err.start:err.end]
+    repl = u'\\x'+hex(ord(thebyte))[2:]
+    return (repl, err.end)
+
+codecs.register_error('slashescape', hex_handler)
+def writejson(tcp , udp, filename):
+  with open(filename, 'w') as outfile: 
+    sessions = [session for session in tcp.values()] + [session for session in udp.values()]
+    for session in sessions: 
+      del session['packet_ids']
+      # To epoch millis
+      session['timestamp'] = str(round(float(session['timestamp'])*1000))
+      # Bytes to str
+      session['payload'] = session['payload'].decode('utf-8', 'hex_handler')
+    json.dump(sessions, outfile)
