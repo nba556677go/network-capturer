@@ -32,13 +32,13 @@ i = 0
 for packet in packets:
   if 'TCP' in packet:
     # Session beign
-    if packet.tcp.flags_syn == '1' and packet.tcp.flags_ack == '0' and not in_subnet(packet.ip.src, subnet) and in_subnet(packet.ip.dst, subnet):
+    if packet.tcp.flags_syn == '1' and packet.tcp.flags_ack == '1' and in_subnet(packet.ip.src, subnet) and not in_subnet(packet.ip.dst, subnet):
       #print(packet.sniff_timestamp)
       tcp_sessions[packet.tcp.stream] = {
-        'client': packet.ip.src,
-        'server': packet.ip.dst,
-        'client_port': packet.tcp.srcport,
-        'server_port': packet.tcp.dstport,
+        'client': packet.ip.dst,
+        'server': packet.ip.src,
+        'client_port': packet.tcp.dstport,
+        'server_port': packet.tcp.srcport,
         'protocol' : packet.highest_layer,
         'timestamp' : packet.sniff_timestamp,
         'packet_ids': [i]
