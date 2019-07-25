@@ -60,4 +60,5 @@ def writejson(tcp , udp, filename):
       session['timestamp'] = str(round(float(session['timestamp'])*1000))
       # Bytes to str
       session['payload'] = session['payload'].decode('utf-8', 'hex_handler')
+      session['payload_length'] = len(session['payload'])
     json.dump(sessions, outfile)
