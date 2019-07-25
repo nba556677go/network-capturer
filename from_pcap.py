@@ -45,7 +45,7 @@ for packet in packets:
       }
     elif packet.tcp.stream in tcp_sessions:
       tcp_sessions[packet.tcp.stream]['packet_ids'].append(i)
-      if packet.highest_layer != 'TCP':
+      if packet.highest_layer != 'TCP' and tcp_sessions[packet.tcp.stream]['protocol'] == 'TCP':
         tcp_sessions[packet.tcp.stream]['protocol'] = packet.highest_layer
   elif 'UDP' in packet:
     first = False
@@ -65,7 +65,7 @@ for packet in packets:
     elif packet.udp.stream in udp_sessions:
       try:
         udp_sessions[packet.udp.stream]['packet_ids'].append(i)
-        if packet.highest_layer != 'UDP':
+        if packet.highest_layer != 'UDP' and udp_sessions[packet.udp.stream]['protocol'] == 'UDP':
           udp_sessions[packet.udp.stream]['protocol'] = packet.highest_layer
       except:
         print(udp_sessions, packet.udp.stream)
