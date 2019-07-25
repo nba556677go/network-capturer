@@ -35,10 +35,10 @@ for packet in packets:
     if packet.tcp.flags_syn == '1' and packet.tcp.flags_ack == '0' and not in_subnet(packet.ip.src, subnet) and in_subnet(packet.ip.dst, subnet):
       #print(packet.sniff_timestamp)
       tcp_sessions[packet.tcp.stream] = {
-        'src_ip': packet.ip.src,
-        'dst_ip': packet.ip.dst,
-        'src_port': packet.tcp.srcport,
-        'dst_port': packet.tcp.dstport,
+        'client': packet.ip.src,
+        'server': packet.ip.dst,
+        'client_port': packet.tcp.srcport,
+        'server_port': packet.tcp.dstport,
         'protocol' : packet.highest_layer,
         'timestamp' : packet.sniff_timestamp,
         'packet_ids': [i]
@@ -52,10 +52,10 @@ for packet in packets:
       first = True
     if packet.udp.stream not in udp_sessions and first and not in_subnet(packet.ip.src, subnet) and in_subnet(packet.ip.dst, subnet):
       udp_sessions[packet.udp.stream] = {
-        'src_ip': packet.ip.src,
-        'dst_ip': packet.ip.dst,
-        'src_port': packet.udp.srcport,
-        'dst_port': packet.udp.dstport,
+        'client': packet.ip.src,
+        'server': packet.ip.dst,
+        'client_port': packet.udp.srcport,
+        'server_port': packet.udp.dstport,
         'protocol' : packet.highest_layer,
         'timestamp' : packet.sniff_timestamp,
         'packet_ids': [i]
