@@ -1,39 +1,42 @@
 import pyshark
 from util import *
+from send import send_array, send_json
 import sys
 
-if len(sys.argv) != 3:
-  print("Usage: python3 from_pcap.py <input file> <output file>")
-  exit()
+out, es, debug = None, None, False
+def parse_args(args):
+  global out, es, debug
+  for i in range(2,len(args)):
+    if args[i] == "-out":
+      if i == len(args)-1: return False
+      out = args[i+1]
+    elif args[i] == "-es":
+      if i == len(args)-1: return False
+      es = args[i+1]
+    elif args[i] == "--debug": debug = True
+  if out is None and es is None:
+    return False
+  return True
+
+if len(sys.argv) < 4 or not parse_args(sys.argv):
+  print("Usage: python3 from_pcap.py <input file> [-out output_file] [-es Elasticsearch_URI] [--debug]")
+  exit(1)
 
 pcapfile = sys.argv[1]
 subnet = load_config("./subnet.config")
-'''
-session:
-{
-  'stream_idx': {
-    'src_ip': IP,
-    'dst_ip': IP,
-    'src_port': PORT,
-    'dst_port': PORT,
-    'packet_ids': [indexes]
-  }
-}
-'''
 tcp_sessions = {}
 udp_sessions = {}
 first_udp = {}
 
-print("[*] Reading pcap file...")
+if debug: print("[*] Reading pcap file...")
 packets = pyshark.FileCapture( pcapfile , display_filter="ip && (tcp || udp)")
 
-print("[*] Parsing sessions...")
+if debug: print("[*] Parsing sessions...")
 i = 0
 for packet in packets:
   if 'TCP' in packet:
     # Session beign
     if packet.tcp.flags_syn == '1' and packet.tcp.flags_ack == '1' and in_subnet(packet.ip.src, subnet) and not in_subnet(packet.ip.dst, subnet):
-      #print(packet.sniff_timestamp)
       tcp_sessions[packet.tcp.stream] = {
         'client': packet.ip.dst,
         'server': packet.ip.src,
@@ -68,11 +71,11 @@ for packet in packets:
         if packet.highest_layer != 'UDP' and udp_sessions[packet.udp.stream]['protocol'] == 'UDP':
           udp_sessions[packet.udp.stream]['protocol'] = packet.highest_layer
       except:
-        print(udp_sessions, packet.udp.stream)
-        exit()
+        print("[!] Handle UDP datagram error:", udp_sessions, packet.udp.stream)
+        exit(1)
   i += 1
 
-print("[*] Adding payload info...")
+if debug: print("[*] Adding payload info...")
 #process payload
 for streamID in tcp_sessions.keys():
   payload = follow_stream("tcp",streamID, pcapfile)
@@ -82,4 +85,8 @@ for streamID in udp_sessions.keys():
   payload = follow_stream("udp",streamID, pcapfile) 
   udp_sessions[streamID]['payload'] = payload
 
-writejson(tcp_sessions , udp_sessions, sys.argv[2])
+sessions = to_sessions(tcp_sessions, udp_sessions)
+if out is not None:
+  writejson(sessions, out)
+if es is not None:
+  send_array(es, sessions, debug)

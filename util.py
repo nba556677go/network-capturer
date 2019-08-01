@@ -50,15 +50,18 @@ def hex_handler(err):
     repl = u'\\x'+hex(ord(thebyte))[2:]
     return (repl, err.end)
 
+def to_sessions(tcp, udp):
+  sessions = [session for session in tcp.values()] + [session for session in udp.values()]
+  for session in sessions: 
+    del session['packet_ids']
+    # To epoch millis
+    session['timestamp'] = str(round(float(session['timestamp'])*1000))
+    # Bytes to str
+    session['payload'] = session['payload'].decode('utf-8', 'hex_handler')
+    session['payload_length'] = len(session['payload'])
+  return sessions
+
 codecs.register_error('slashescape', hex_handler)
-def writejson(tcp , udp, filename):
+def writejson(sessions, filename):
   with open(filename, 'w') as outfile: 
-    sessions = [session for session in tcp.values()] + [session for session in udp.values()]
-    for session in sessions: 
-      del session['packet_ids']
-      # To epoch millis
-      session['timestamp'] = str(round(float(session['timestamp'])*1000))
-      # Bytes to str
-      session['payload'] = session['payload'].decode('utf-8', 'hex_handler')
-      session['payload_length'] = len(session['payload'])
     json.dump(sessions, outfile)
