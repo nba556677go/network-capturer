@@ -43,6 +43,7 @@ for packet in packets:
         'client_port': packet.tcp.dstport,
         'server_port': packet.tcp.srcport,
         'protocol' : packet.highest_layer,
+        'transport_layer_protocol': "TCP",
         'timestamp' : packet.sniff_timestamp,
         'packet_ids': [i]
       }
@@ -62,6 +63,7 @@ for packet in packets:
         'client_port': packet.udp.srcport,
         'server_port': packet.udp.dstport,
         'protocol' : packet.highest_layer,
+        'transport_layer_protocol': "UDP",
         'timestamp' : packet.sniff_timestamp,
         'packet_ids': [i]
       }
